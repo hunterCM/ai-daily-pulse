@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: ai-daily-pulse
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.11"
+      - key: NODE_VERSION
+        value: "20"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: REDDIT_CLIENT_ID
+        sync: false
+      - key: REDDIT_CLIENT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        value: "sqlite:///./ai_daily_pulse.db"
+      - key: FROM_EMAIL
+        value: "AI Daily Pulse <briefs@aidailypulse.com>"
+      - key: ADMIN_EMAIL
+        value: "inayethg777@gmail.com"
+      - key: ENVIRONMENT
+        value: "production"
