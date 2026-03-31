@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 set -o errexit
 
-# Install Python dependencies
+echo "==> Installing Python dependencies..."
 cd backend
 pip install -r requirements.txt
 
-# Build React frontend
+echo "==> Building React frontend..."
 cd ../frontend
 npm install
 npm run build
 
-# Copy built frontend into backend/static for serving
+echo "==> Copying frontend build to backend/static..."
+rm -rf ../backend/static
 mkdir -p ../backend/static
 cp -r dist/* ../backend/static/
 
-echo "Build complete!"
+echo "==> Build complete!"
+ls -la ../backend/static/

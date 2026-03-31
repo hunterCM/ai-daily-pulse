@@ -67,13 +67,23 @@ def health_check():
 
 # Serve React frontend in production
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
-if os.path.isdir(STATIC_DIR):
-    app.mount("/assets", StaticFiles(directory=os.path.join(STATIC_DIR, "assets")), name="assets")
+assets_dir = os.path.join(STATIC_DIR, "assets")
+if os.path.isdir(assets_dir):
+    app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
-    @app.get("/{full_path:path}")
-    async def serve_spa(request: Request, full_path: str):
-        """Serve the React SPA for any non-API route."""
+
+@app.get("/{full_path:path}")
+async def serve_spa(request: Request, full_path: str):
+    """Serve the React SPA for any non-API route, or a welcome message if not built."""
+    index_file = os.path.join(STATIC_DIR, "index.html")
+    if not os.path.isfile(index_file):
+        return {
+            "app": "AI Daily Pulse",
+            "status": "running",
+            "message": "API is live. Frontend not built yet — visit /api/health or /docs",
+        }
+    if full_path:
         file_path = os.path.join(STATIC_DIR, full_path)
         if os.path.isfile(file_path):
             return FileResponse(file_path)
-        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+    return FileResponse(index_file)
