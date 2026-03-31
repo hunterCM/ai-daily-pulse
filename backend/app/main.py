@@ -1,5 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -16,6 +17,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 settings = get_settings()
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 @asynccontextmanager
@@ -51,9 +54,13 @@ app.include_router(subscribers.router)
 app.include_router(briefs.router)
 app.include_router(news.router)
 
-pdf_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pdfs")
-os.makedirs(pdf_dir, exist_ok=True)
-app.mount("/pdfs", StaticFiles(directory=pdf_dir), name="pdfs")
+pdf_dir = BASE_DIR / "pdfs"
+pdf_dir.mkdir(exist_ok=True)
+app.mount("/pdfs", StaticFiles(directory=str(pdf_dir)), name="pdfs")
+
+STATIC_DIR = BASE_DIR / "static"
+INDEX_FILE = STATIC_DIR / "index.html"
+ASSETS_DIR = STATIC_DIR / "assets"
 
 
 @app.get("/api/health")
@@ -65,25 +72,20 @@ def health_check():
     }
 
 
-# Serve React frontend in production
-STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
-assets_dir = os.path.join(STATIC_DIR, "assets")
-if os.path.isdir(assets_dir):
-    app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+if ASSETS_DIR.is_dir():
+    app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
 
 
 @app.get("/{full_path:path}")
 async def serve_spa(request: Request, full_path: str):
-    """Serve the React SPA for any non-API route, or a welcome message if not built."""
-    index_file = os.path.join(STATIC_DIR, "index.html")
-    if not os.path.isfile(index_file):
+    if not INDEX_FILE.is_file():
         return {
             "app": "AI Daily Pulse",
             "status": "running",
             "message": "API is live. Frontend not built yet — visit /api/health or /docs",
         }
     if full_path:
-        file_path = os.path.join(STATIC_DIR, full_path)
-        if os.path.isfile(file_path):
-            return FileResponse(file_path)
-    return FileResponse(index_file)
+        file_path = STATIC_DIR / full_path
+        if file_path.is_file():
+            return FileResponse(str(file_path))
+    return FileResponse(str(INDEX_FILE))
